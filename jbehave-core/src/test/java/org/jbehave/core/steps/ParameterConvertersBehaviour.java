@@ -43,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
@@ -461,8 +462,9 @@ public class ParameterConvertersBehaviour {
     @Test
     public void shouldConvertEnumFluently() {
         ParameterConverter converter = new FluentEnumConverter();
-        assertThat(converter.accept(SomeEnum.class), equalTo(true));
+        assertTrue(converter.accept(SomeEnum.class));
         assertThat((SomeEnum) converter.convertValue("multiple words and 1 number", SomeEnum.class), equalTo(SomeEnum.MULTIPLE_WORDS_AND_1_NUMBER));
+        assertThat((SomeEnum) converter.convertValue("can't", SomeEnum.class), equalTo(SomeEnum.CAN_T));
     }
     
     

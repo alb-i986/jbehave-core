@@ -171,5 +171,6 @@ enum SomeEnum {
     TWO,
     THREE,
     MULTIPLE_WORDS_AND_1_NUMBER,
+    CAN_T,
     ;
 }
