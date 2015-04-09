@@ -1,6 +1,7 @@
 package org.jbehave.core.steps;
 
 import java.beans.IntrospectionException;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -511,6 +512,42 @@ public class ParameterConvertersBehaviour {
         assertThat((Boolean) converter.convertValue("ON", type), is(true));
         assertThat((Boolean) converter.convertValue("OFF", type), is(false));
         assertThat((Boolean) converter.convertValue("whatever", type), is(false));
+    }
+
+    @Test
+    public void shouldConvertBooleanWithEnglishLocale_positive() {
+        String value = "with";
+        ParameterConverter converter = new BooleanConverter();
+        assertTrue(converter.accept(Boolean.class));
+        Boolean convertedValue = (Boolean) converter.convertValue(value, Boolean.class);
+        assertThat(convertedValue, is(true));
+    }
+
+    @Test
+    public void shouldConvertBooleanWithEnglishLocale_negative() {
+        String value = "without";
+        ParameterConverter converter = new BooleanConverter();
+        assertTrue(converter.accept(Boolean.class));
+        Boolean convertedValue = (Boolean) converter.convertValue(value, Boolean.class);
+        assertThat(convertedValue, is(false));
+    }
+
+    @Test
+    public void shouldConvertBooleanWithNonEnglishLocale_latinCharacters() {
+        String value = "può";
+        ParameterConverter converter = new BooleanConverter().withLocale(Locale.ITALIAN);
+        assertTrue(converter.accept(Boolean.class));
+        Boolean convertedValue = (Boolean) converter.convertValue(value, Boolean.class);
+        assertThat(convertedValue, is(true));
+    }
+
+    @Test
+    public void shouldConvertBooleanWithEnglishLocale() {
+        try {
+            new BooleanConverter().withLocale(Locale.ENGLISH);
+        } catch (ParameterConvertionFailed e) {
+            fail("The resource for the English locale should be loadable.");
+        }
     }
 
     @SuppressWarnings("unchecked")

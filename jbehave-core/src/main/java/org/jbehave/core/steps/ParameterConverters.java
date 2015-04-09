@@ -1,5 +1,6 @@
 package org.jbehave.core.steps;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -474,9 +476,29 @@ public class ParameterConverters {
 
     }
 
+    /**
+     * Converts Strings to Booleans.
+     * Not only it is able to convert strings like {@code true} or {@code false},
+     * but also expressions like {@code should} or {@code shouldn't}.
+     * <p>
+     * The more advanced conversions are enabled by the properties files {@code i18n/boolean_expressions_$LOCALE.properties},
+     * containing the mapping {@code String expression -> Boolean value}.
+     * <p>
+     * By default, BooleanConverter uses English as the locale for the boolean expressions.
+     * But it can be customized with {@link BooleanConverter#withLocale(Locale)} or
+     * {@link BooleanConverter#withDefaultLocale()}.
+     * <p>
+     * When adding new localized expressions properties files, please make sure they are encoded as iso-8859-1,
+     * as required by {@link Properties#load(java.io.InputStream)}.
+     */
     public static class BooleanConverter implements ParameterConverter {
+
+        private static final String booleanExpressionsResourcePath = "/i18n/boolean_expressions_%s.properties";
+
         private String trueValue;
         private String falseValue;
+
+        private Properties expressionsToBooleans = new Properties();
 
         public BooleanConverter() {
             this(DEFAULT_TRUE_VALUE, DEFAULT_FALSE_VALUE);
@@ -485,6 +507,7 @@ public class ParameterConverters {
         public BooleanConverter(String trueValue, String falseValue) {
             this.trueValue = trueValue;
             this.falseValue = falseValue;
+            withLocale(Locale.ENGLISH);
         }
 
         public boolean accept(Type type) {
@@ -495,11 +518,48 @@ public class ParameterConverters {
         }
 
         public Object convertValue(String value, Type type) {
+            String booleanValue = expressionsToBooleans.getProperty(value);
+            if(booleanValue != null) {
+                return Boolean.valueOf(booleanValue);
+            } else { // finally fallback to the original BooleanConverter's behavior
+                try {
+                    return BooleanUtils.toBoolean(value, trueValue, falseValue);
+                } catch (IllegalArgumentException e) {
+                    return false;
+                }
+            }
+        }
+
+        /**
+         * Use the default locale, i.e. {@link Locale#getDefault()}.
+         * 
+         * @see #withLocale(Locale)
+         * @see Locale#getDefault()
+         */
+        public BooleanConverter withDefaultLocale() {
+            return withLocale(Locale.getDefault());
+        }
+
+        /**
+         * Builds a BooleanConverter able to convert boolean expressions in the given locale.
+         * 
+         * @param locale if null, {@link Locale#getDefault()} will be picked
+         * @return this
+         * @throws ParameterConvertionFailed if the resource with the localized boolean expressions
+         *                                   cannot be loaded.
+         */
+        public BooleanConverter withLocale(Locale locale) {
+            if(locale == null) {
+                locale = Locale.getDefault();
+            }
+            String resourcePath = String.format(booleanExpressionsResourcePath, locale.getLanguage());
             try {
-				return BooleanUtils.toBoolean(value, trueValue, falseValue);
-			} catch (IllegalArgumentException e) {
-				return false;
-			}
+                expressionsToBooleans = new Properties();
+                expressionsToBooleans.load(BooleanConverter.class.getResourceAsStream(resourcePath));
+            } catch (IOException e) {
+                throw new ParameterConvertionFailed("Failed to load the properties file " + resourcePath, e);
+            }
+            return this;
         }
     }
 
