@@ -10,6 +10,9 @@ import java.util.Properties;
 import org.jbehave.core.Embeddable;
 import org.jbehave.core.configuration.Configuration;
 import org.jbehave.core.configuration.MostUsefulConfiguration;
+import org.jbehave.core.context.Context;
+import org.jbehave.core.context.ContextView;
+import org.jbehave.core.context.JFrameContextView;
 import org.jbehave.core.i18n.LocalizedKeywords;
 import org.jbehave.core.io.CodeLocations;
 import org.jbehave.core.io.LoadFromClasspath;
@@ -20,9 +23,12 @@ import org.jbehave.core.parsers.RegexPrefixCapturingPatternParser;
 import org.jbehave.core.parsers.RegexStoryParser;
 import org.jbehave.core.reporters.CrossReference;
 import org.jbehave.core.reporters.StoryReporterBuilder;
+import org.jbehave.core.steps.ContextStepMonitor;
 import org.jbehave.core.steps.InjectableStepsFactory;
 import org.jbehave.core.steps.InstanceStepsFactory;
+import org.jbehave.core.steps.NullStepMonitor;
 import org.jbehave.core.steps.ParameterConverters;
+import org.jbehave.core.steps.StepMonitor;
 import org.jbehave.core.steps.ParameterConverters.DateConverter;
 import org.jbehave.core.steps.ParameterConverters.ExamplesTableConverter;
 import ${package}.steps.MySteps;
@@ -65,7 +71,8 @@ public class MyStories extends JUnitStories {
                 .withCodeLocation(CodeLocations.codeLocationFromClass(embeddableClass))
                 .withDefaultFormats()
                 .withFormats(CONSOLE, TXT, HTML, XML))
-            .useParameterConverters(parameterConverters);
+            .useParameterConverters(parameterConverters)
+            .useStepMonitor(stepMonitor());
     }
 
     @Override
@@ -78,5 +85,13 @@ public class MyStories extends JUnitStories {
         return new StoryFinder().findPaths(codeLocationFromClass(this.getClass()), "**/*.story", "**/excluded*.story");
                 
     }
-        
+
+    /**
+     * @return a StepMonitor featuring a {@link JFrameContextView}.
+     */
+    private StepMonitor stepMonitor() {
+        Context context = new Context();
+        ContextView contextView = new JFrameContextView().sized(640, 120);
+        return new ContextStepMonitor(context, contextView, new NullStepMonitor());
+    }
 }
