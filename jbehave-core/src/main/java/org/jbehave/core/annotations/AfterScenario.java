@@ -27,6 +27,6 @@ public @interface AfterScenario {
      * 
      * @return A ScenarioType upon which the method should be invoked
      */
-    ScenarioType uponType() default ScenarioType.NORMAL;
+    ScenarioType uponType() default ScenarioType.ANY;
 
 }
